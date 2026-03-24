@@ -49,9 +49,13 @@ def get_ollama_response(prompt: str, context: str = "") -> str:
             response = client.post(
                 f"{settings.OLLAMA_HOST}/api/generate",
                 json={
-                    "model": "qwen2.5:3b",
+                    "model": "qwen2.5:1b",
                     "prompt": full_prompt,
                     "stream": False,
+                    "options": {
+                        "num_gpu": 0,
+                        "num_thread": 2,
+                    }
                 },
             )
             if response.status_code == 200:
