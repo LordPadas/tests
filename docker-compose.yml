@@ -8,6 +8,20 @@ services:
       POSTGRES_DB: app
     volumes:
       - db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    profiles:
+      - db
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    profiles:
+      - ai
+
   backend:
     build: ./backend
     depends_on:
@@ -16,11 +30,23 @@ services:
       - "8000:8000"
     environment:
       DB_URL: postgresql://postgres:postgres@db:5432/app
-  # ollama:
-  #   image: ghcr.io/ollama/ollama:latest
-  #   ports:
-  #     - "11434:11434"
-  #   depends_on:
-  #     - backend
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://ollama:11434}
+      ROCKETCHAT_URL: ${ROCKETCHAT_URL:-http://localhost:3000}
+    restart: unless-stopped
+
+  bot:
+    build: ./bot
+    depends_on:
+      - backend
+    environment:
+      ROCKETCHAT_URL: ${ROCKETCHAT_URL:-http://localhost:3000}
+      BACKEND_URL: http://backend:8000
+      BOT_USER: ${ROCKETCHAT_BOT_USER:-}
+      BOT_PASSWORD: ${ROCKETCHAT_BOT_PASSWORD:-}
+    restart: unless-stopped
+    profiles:
+      - bot
+
 volumes:
   db_data:
+  ollama_data:
