@@ -1,0 +1,15 @@
+from __future__ import annotations
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, scoped_session
+from .config import Settings
+
+engine = create_engine(Settings().DB_URL, future=True)
+SessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

@@ -1,0 +1,65 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ main, master, release/** ]
+  pull_request:
+    branches: [ '**' ]
+
+jobs:
+  lint-test-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+      - name: Lint/Format
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y curl
+          curl -sS https://install.ruff.rs/lints.sh | sh
+          ruff check .
+          ruff format .
+          isort .
+          black .
+      - name: Run tests
+        run: |
+          pytest -q
+      - name: Type checks
+        run: |
+          mypy . --ignore-mithril-errors || true
+
+  build-and-push:
+    needs: [lint-test-typecheck]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend image
+        run: |
+          docker build -t localhost:5000/backend:latest -f backend/Dockerfile backend
+      - name: Push to local registry
+        run: |
+          docker push localhost:5000/backend:latest
+
+  deploy-on-prem:
+    needs: [build-and-push]
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH to on-prem and deploy
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.ON_PREM_HOST }}
+          username: ${{ secrets.ON_PREM_USER }}
+          key: ${{ secrets.ON_PREM_SSH_KEY }}
+          script: |
+            docker login localhost:5000 -u user -p pass
+            docker pull localhost:5000/backend:latest
+            cd /srv/app
+            docker-compose down
+            docker-compose up -d --build

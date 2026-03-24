@@ -1,0 +1,9 @@
+fastapi==0.106.0
+uvicorn[standard]==0.23.0
+pydantic==1.10.2
+SQLAlchemy==2.0.15
+psycopg2-binary==2.9.6
+python-dotenv==1.0.0
+mypy==0.990
+mangum==0.10.0
+typing-extensions>=4.0.0
