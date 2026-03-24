@@ -49,7 +49,7 @@ def get_ollama_response(prompt: str, context: str = "") -> str:
             response = client.post(
                 f"{settings.OLLAMA_HOST}/api/generate",
                 json={
-                    "model": "qwen2.5:1b",
+                    "model": "phi",
                     "prompt": full_prompt,
                     "stream": False,
                     "options": {
